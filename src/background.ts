@@ -44,6 +44,7 @@ if (chrome.storage && chrome.storage.local) {
 
 // Save auth state to persistent storage
 const saveAuthState = (authState: AuthState) => {
+    const previousState = persistentAuthState;
     persistentAuthState = authState;
     memoryAuthState = authState; // Always keep in-memory copy
     
@@ -54,6 +55,22 @@ const saveAuthState = (authState: AuthState) => {
                     console.warn('Error saving to storage:', chrome.runtime.lastError.message);
                 } else {
                     console.log('Saved auth state to storage:', authState);
+                    
+                    // Notify all tabs about auth state change
+                    if (previousState.isValid !== authState.isValid) {
+                        chrome.tabs.query({}, (tabs: chrome.tabs.Tab[]) => {
+                            tabs.forEach(tab => {
+                                if (tab.id) {
+                                    chrome.tabs.sendMessage(tab.id, {
+                                        type: 'AUTH_STATE_CHANGED',
+                                        authState: authState
+                                    }).catch(() => {
+                                        // Ignore errors for tabs that don't have content script
+                                    });
+                                }
+                            });
+                        });
+                    }
                 }
             });
         } catch (error) {

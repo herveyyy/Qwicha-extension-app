@@ -119,6 +119,32 @@ function App() {
         
         checkConnection();
         loadPersistentAuth();
+
+        // Set up interval to check for authentication changes
+        const authCheckInterval = setInterval(() => {
+            loadPersistentAuth();
+        }, 2000); // Check every 2 seconds
+
+        // Listen for tab updates to check auth when user navigates
+        const handleTabUpdate = () => {
+            setTimeout(() => {
+                loadPersistentAuth();
+            }, 1000); // Wait 1 second after tab update
+        };
+
+        // Listen for messages from background script about auth changes
+        const messageListener = (message: any) => {
+            if (message.type === 'AUTH_STATE_CHANGED') {
+                loadPersistentAuth();
+            }
+        };
+
+        chrome.runtime.onMessage.addListener(messageListener);
+
+        return () => {
+            clearInterval(authCheckInterval);
+            chrome.runtime.onMessage.removeListener(messageListener);
+        };
     }, []);
 
     const loadPersistentAuth = () => {
@@ -215,6 +241,54 @@ function App() {
         }
     };
 
+    // Show splash screen when not authenticated
+    if (!userInfo?.isValid) {
+        return (
+            <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-white to-orange-100 flex flex-col items-center justify-center relative overflow-hidden">
+                {/* Background texture */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-orange-100/30"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-orange-200/40 to-transparent"></div>
+                
+                {/* Logo */}
+                <div className="relative z-10 flex flex-col items-center space-y-6">
+                    <div className="w-20 h-20 bg-gradient-to-b from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-500/25 transform rotate-12">
+                        <span className="text-white text-3xl font-bold transform -rotate-12">SQ</span>
+                    </div>
+                    
+                    {/* App Name */}
+                    <div className="text-center">
+                        <h1 className="text-4xl font-bold text-gray-900 mb-2">Silid Qwicha</h1>
+                        <p className="text-gray-700 text-lg mb-1">Smart. Safe. Seamless.</p>
+                        <p className="text-gray-600 text-sm">Your student portal for classes and activities.</p>
+                    </div>
+                    
+                    {/* CTA Buttons */}
+                    <div className="flex flex-col gap-3 w-full max-w-xs">
+                        <button
+                            onClick={goToLoginPage}
+                            className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                            Get Started
+                        </button>
+                        <button
+                            onClick={loadPersistentAuth}
+                            className="px-6 py-3 bg-white/80 hover:bg-white text-orange-600 font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 border border-orange-200"
+                        >
+                            Check Authentication
+                        </button>
+                    </div>
+                </div>
+                
+                {/* Subtle particles effect */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-orange-400/30 rounded-full animate-pulse"></div>
+                    <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-orange-300/20 rounded-full animate-pulse delay-1000"></div>
+                    <div className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-orange-500/25 rounded-full animate-pulse delay-2000"></div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="h-screen w-full bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
             {/* Header */}
@@ -260,52 +334,55 @@ function App() {
             {/* Content */}
             <div className="flex-1 p-4 overflow-y-auto">
                 {currentView === 'auth' ? (
-                    <>
+                    <div className="bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-xl p-6 text-white">
                         {/* Authentication Header */}
-                        <div className="mb-4">
-                            <h2 className="text-lg font-semibold text-gray-900 mb-1">Authentication & Cookies</h2>
-                            <p className="text-sm text-gray-600">Manage your login status and cookies</p>
+                        <div className="mb-6 text-center">
+                            <div className="w-16 h-16 bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25 transform rotate-12 mx-auto mb-4">
+                                <span className="text-white text-2xl font-bold transform -rotate-12">⚙️</span>
+                            </div>
+                            <h2 className="text-xl font-semibold text-white mb-2">Authentication & Cookies</h2>
+                            <p className="text-sm text-white/70">Manage your login status and cookies</p>
                         </div>
 
                         {/* Authentication Status */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4 mb-4">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4 mb-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-gray-900">Authentication Status</h3>
+                                <h3 className="font-medium text-white">Authentication Status</h3>
                                 <div className={`w-3 h-3 rounded-full ${userInfo?.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
                             </div>
                             
                             {userInfo?.isValid ? (
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-600">Name:</span>
-                                        <span className="text-sm font-medium text-gray-900">{userInfo.name}</span>
+                                        <span className="text-sm text-white/70">Name:</span>
+                                        <span className="text-sm font-medium text-white">{userInfo.name}</span>
                                     </div>
                                     {userInfo.role && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600">Role:</span>
-                                            <span className="text-sm font-medium text-gray-900">{userInfo.role}</span>
+                                            <span className="text-sm text-white/70">Role:</span>
+                                            <span className="text-sm font-medium text-white">{userInfo.role}</span>
                                         </div>
                                     )}
                                     {userInfo.domain && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-600">Domain:</span>
-                                            <span className="text-sm font-medium text-gray-900">{userInfo.domain}</span>
+                                            <span className="text-sm text-white/70">Domain:</span>
+                                            <span className="text-sm font-medium text-white">{userInfo.domain}</span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-600">Cookies:</span>
-                                        <span className="text-sm font-medium text-gray-900">{cookies.length} stored</span>
+                                        <span className="text-sm text-white/70">Cookies:</span>
+                                        <span className="text-sm font-medium text-white">{cookies.length} stored</span>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-4">
-                                    <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                        <span className="text-gray-400 text-xl">🔒</span>
+                                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                        <span className="text-white/60 text-xl">🔒</span>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-3">Not authenticated</p>
+                                    <p className="text-sm text-white/70 mb-3">Not authenticated</p>
                                     <button
                                         onClick={goToLoginPage}
-                                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
+                                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
                                     >
                                         Go to Login Page
                                     </button>
@@ -314,10 +391,10 @@ function App() {
                         </div>
 
                         {/* Cookie Management */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4 mb-4">
+                        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4 mb-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-gray-900">Cookie Management</h3>
-                                <span className="text-xs text-gray-500">{cookies.length} cookies</span>
+                                <h3 className="font-medium text-white">Cookie Management</h3>
+                                <span className="text-xs text-white/60">{cookies.length} cookies</span>
                             </div>
                             
                             <div className="space-y-2">
@@ -353,27 +430,27 @@ function App() {
 
                         {/* Cookie List */}
                         {cookies.length > 0 && (
-                            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4">
-                                <h3 className="font-medium text-gray-900 mb-3">Stored Cookies</h3>
+                            <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4">
+                                <h3 className="font-medium text-white mb-3">Stored Cookies</h3>
                                 <div className="space-y-2 max-h-40 overflow-y-auto">
                                     {cookies.slice(0, 10).map((cookie, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                        <div key={index} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{cookie.name}</p>
-                                                <p className="text-xs text-gray-500 truncate">{cookie.domain}</p>
+                                                <p className="text-sm font-medium text-white truncate">{cookie.name}</p>
+                                                <p className="text-xs text-white/60 truncate">{cookie.domain}</p>
                                             </div>
-                                            <div className="text-xs text-gray-400">
+                                            <div className="text-xs text-white/50">
                                                 {cookie.secure ? '🔒' : '🔓'}
                                             </div>
                                         </div>
                                     ))}
                                     {cookies.length > 10 && (
-                                        <p className="text-xs text-gray-500 text-center">... and {cookies.length - 10} more</p>
+                                        <p className="text-xs text-white/60 text-center">... and {cookies.length - 10} more</p>
                                     )}
                                 </div>
                             </div>
                         )}
-                    </>
+                    </div>
                 ) : currentView === 'classes' ? (
                     <>
                         {/* Classes Header */}
