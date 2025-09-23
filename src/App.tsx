@@ -21,11 +21,37 @@ interface Activity {
     dueDate: string;
 }
 
+interface AuthState {
+    isValid: boolean;
+    name?: string;
+    email?: string;
+    role?: string;
+    domain?: string;
+    lastChecked: number;
+    cookies?: any[];
+}
+
+interface CookieResponse {
+    allCookies?: any[];
+    authCookies?: any[];
+    sessionCookies?: any[];
+    secureCookies?: any[];
+    domain?: string;
+    url?: string;
+    totalCount?: number;
+    method?: string;
+    authState?: AuthState;
+    error?: string;
+}
+
 function App() {
     const [tabInfo, setTabInfo] = useState<TabInfo>({});
     const [isConnected, setIsConnected] = useState(false);
-    const [currentView, setCurrentView] = useState<'classes' | 'activities'>('classes');
+    const [currentView, setCurrentView] = useState<'classes' | 'activities' | 'auth'>('classes');
     const [selectedClass, setSelectedClass] = useState<ClassCard | null>(null);
+    const [userInfo, setUserInfo] = useState<AuthState | null>(null);
+    const [cookies, setCookies] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     // Minimal class data
     const classCards: ClassCard[] = [
@@ -92,7 +118,55 @@ function App() {
         };
         
         checkConnection();
+        loadPersistentAuth();
     }, []);
+
+    const loadPersistentAuth = () => {
+        chrome.runtime.sendMessage({ type: 'GET_PERSISTENT_AUTH' }, (response: any) => {
+            if (response && response.authState) {
+                setUserInfo(response.authState);
+                if (response.authState.cookies) {
+                    setCookies(response.authState.cookies);
+                }
+            }
+        });
+    };
+
+    const getCookies = () => {
+        setIsLoading(true);
+        chrome.runtime.sendMessage({ type: 'GET_SILID_COOKIES' }, (response: CookieResponse) => {
+            setIsLoading(false);
+            if (response.error) {
+                console.error('Error getting cookies:', response.error);
+                alert('Error: ' + response.error);
+            } else if (response.allCookies) {
+                setCookies(response.allCookies);
+                if (response.authState) {
+                    setUserInfo(response.authState);
+                }
+                console.log('Cookies retrieved:', response);
+            }
+        });
+    };
+
+    const clearAuthState = () => {
+        chrome.runtime.sendMessage({ type: 'CLEAR_AUTH_STATE' }, (response: any) => {
+            if (response && response.success) {
+                setUserInfo(null);
+                setCookies([]);
+                console.log('Auth state cleared');
+            }
+        });
+    };
+
+    const goToLoginPage = () => {
+        const loginUrl = 'https://staging-33.wela-v15.dev/login#login';
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs: chrome.tabs.Tab[]) => {
+            if (tabs[0]?.id) {
+                chrome.tabs.update(tabs[0].id, { url: loginUrl });
+            }
+        });
+    };
 
     const handleClassClick = (classCard: ClassCard) => {
         setSelectedClass(classCard);
@@ -152,28 +226,155 @@ function App() {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-gray-900">Silid Qwicha</h1>
+                            {userInfo?.isValid && (
+                                <p className="text-xs text-green-600">✓ {userInfo.name}</p>
+                            )}
                         </div>
                     </div>
-                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setCurrentView(currentView === 'auth' ? 'classes' : 'auth')}
+                            className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                            title="Authentication & Cookies"
+                        >
+                            <span className="text-gray-600 text-sm">⚙️</span>
+                        </button>
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    </div>
                 </div>
             </div>
 
             {/* Navigation */}
-            {currentView === 'activities' && selectedClass && (
+            {(currentView === 'activities' && selectedClass) || currentView === 'auth' ? (
                 <div className="bg-white/60 backdrop-blur-sm border-b border-gray-200/50 px-4 py-2">
                     <button
-                        onClick={goBackToClasses}
+                        onClick={currentView === 'auth' ? () => setCurrentView('classes') : goBackToClasses}
                         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
                     >
                         <span>←</span>
                         <span>Back</span>
                     </button>
                 </div>
-            )}
+            ) : null}
 
             {/* Content */}
             <div className="flex-1 p-4 overflow-y-auto">
-                {currentView === 'classes' ? (
+                {currentView === 'auth' ? (
+                    <>
+                        {/* Authentication Header */}
+                        <div className="mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-1">Authentication & Cookies</h2>
+                            <p className="text-sm text-gray-600">Manage your login status and cookies</p>
+                        </div>
+
+                        {/* Authentication Status */}
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4 mb-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-medium text-gray-900">Authentication Status</h3>
+                                <div className={`w-3 h-3 rounded-full ${userInfo?.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                            </div>
+                            
+                            {userInfo?.isValid ? (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-600">Name:</span>
+                                        <span className="text-sm font-medium text-gray-900">{userInfo.name}</span>
+                                    </div>
+                                    {userInfo.role && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-gray-600">Role:</span>
+                                            <span className="text-sm font-medium text-gray-900">{userInfo.role}</span>
+                                        </div>
+                                    )}
+                                    {userInfo.domain && (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm text-gray-600">Domain:</span>
+                                            <span className="text-sm font-medium text-gray-900">{userInfo.domain}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-600">Cookies:</span>
+                                        <span className="text-sm font-medium text-gray-900">{cookies.length} stored</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                        <span className="text-gray-400 text-xl">🔒</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-3">Not authenticated</p>
+                                    <button
+                                        onClick={goToLoginPage}
+                                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
+                                    >
+                                        Go to Login Page
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Cookie Management */}
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4 mb-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-medium text-gray-900">Cookie Management</h3>
+                                <span className="text-xs text-gray-500">{cookies.length} cookies</span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <button
+                                    onClick={getCookies}
+                                    disabled={isLoading}
+                                    className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Getting Cookies...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>🍪</span>
+                                            <span>Get Cookies</span>
+                                        </>
+                                    )}
+                                </button>
+                                
+                                {userInfo?.isValid && (
+                                    <button
+                                        onClick={clearAuthState}
+                                        className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <span>🗑️</span>
+                                        <span>Clear Authentication</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Cookie List */}
+                        {cookies.length > 0 && (
+                            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200/50 shadow-sm p-4">
+                                <h3 className="font-medium text-gray-900 mb-3">Stored Cookies</h3>
+                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                    {cookies.slice(0, 10).map((cookie, index) => (
+                                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-900 truncate">{cookie.name}</p>
+                                                <p className="text-xs text-gray-500 truncate">{cookie.domain}</p>
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                                {cookie.secure ? '🔒' : '🔓'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {cookies.length > 10 && (
+                                        <p className="text-xs text-gray-500 text-center">... and {cookies.length - 10} more</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : currentView === 'classes' ? (
                     <>
                         {/* Classes Header */}
                         <div className="mb-4">

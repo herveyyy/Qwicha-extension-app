@@ -17,6 +17,8 @@ This is a **student portal extension** that provides:
 -   📚 **Class Cards**: Minimal row-based layout showing class information
 -   📝 **Activity Lists**: Quick access to quizzes, assignments, and lessons
 -   🔗 **LMS Integration**: Direct redirection to full Silid LMS website
+-   🍪 **Cookie Management**: Advanced cookie retrieval and authentication storage
+-   🔐 **Persistent Auth**: Maintains login state across browser sessions
 -   🎨 **Modern UI**: Glass-morphism design with smooth animations
 -   ⚡ **Fast & Lightweight**: Built with React, TypeScript, and Vite
 -   📱 **Responsive**: Works perfectly in Chrome sidebar
@@ -50,10 +52,19 @@ This is a **student portal extension** that provides:
 ## Usage
 
 1. **Open the Portal**: Click the "Silid Qwicha" extension icon in your Chrome toolbar
-2. **View Classes**: See all your classes in a clean, minimal list format
-3. **Select Class**: Click any class to view its activities
-4. **Access Activities**: Click any activity to redirect to the full LMS
-5. **Navigate Back**: Use the back button to return to class list
+2. **Authentication**: Click the ⚙️ settings button to access cookie management
+3. **Get Cookies**: Use "Get Cookies" button to retrieve authentication from Wela domains
+4. **View Classes**: See all your classes in a clean, minimal list format
+5. **Select Class**: Click any class to view its activities
+6. **Access Activities**: Click any activity to redirect to the full LMS
+7. **Navigate Back**: Use the back button to return to class list
+
+### Authentication Flow
+
+1. **Login**: Go to `https://staging-33.wela-v15.dev/login#login` and log in
+2. **Get Cookies**: In the extension, click ⚙️ → "Get Cookies" to store authentication
+3. **Persistent State**: Your login status persists across browser sessions
+4. **Auto-Detection**: Extension automatically detects valid authentication cookies
 
 ## How It Works
 
@@ -112,6 +123,8 @@ dist/                    # Built extension files
 -   `chrome.tabs` - Tab information and redirection
 -   `chrome.runtime` - Extension messaging
 -   `chrome.action` - Extension icon click handling
+-   `chrome.cookies` - Cookie retrieval and management
+-   `chrome.storage` - Persistent authentication state storage
 
 ## Customization
 
@@ -132,6 +145,17 @@ Currently uses mock data for classes and activities. To integrate with real data
 -   **Background Script**: Modify `src/background.ts` to change extension behavior
 -   **Content Script**: Edit `src/content.ts` to change page interactions
 -   **Portal UI**: Update `src/App.tsx` to modify the student portal interface
+
+### Permissions
+
+The extension requests these permissions:
+
+-   `activeTab` - Access to current tab information
+-   `scripting` - Inject content scripts
+-   `sidePanel` - Open sidebar interface
+-   `cookies` - Access to browser cookies for authentication
+-   `storage` - Persistent storage for authentication state
+-   `host_permissions` - Access to Wela domains for cookie retrieval
 
 ## Browser Compatibility
 
