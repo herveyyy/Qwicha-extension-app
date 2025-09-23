@@ -1,0 +1,44 @@
+{
+    "name": "Silid Qwicha",
+    "description": "Chrome extension prototype for testing capabilities with Silid LMS integration.",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+        "default_title": "Open Silid Qwicha"
+    },
+    "side_panel": {
+        "default_path": "dist/index.html"
+    },
+    "background": {
+        "service_worker": "dist/background.js"
+    },
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "sidePanel",
+        "cookies",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://staging-33.wela-v15.dev/*",
+        "https://*.wela-v15.dev/*",
+        "https://*.wela.dev/*",
+        "http://staging-33.wela-v15.dev/*",
+        "http://*.wela-v15.dev/*",
+        "http://*.wela.dev/*"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://staging-33.wela-v15.dev/*",
+                "https://*.wela-v15.dev/*",
+                "https://*.wela.dev/*",
+                "http://staging-33.wela-v15.dev/*",
+                "http://*.wela-v15.dev/*",
+                "http://*.wela.dev/*"
+            ],
+            "js": ["dist/content.js"],
+            "run_at": "document_end"
+        }
+    ]
+}

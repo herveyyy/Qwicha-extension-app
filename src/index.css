@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+/* Example using Tailwind */
+.vibe-extension-root {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999; /* A high number to ensure it's on top */
+}
