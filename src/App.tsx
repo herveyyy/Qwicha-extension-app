@@ -164,7 +164,11 @@ function App() {
             setIsLoading(false);
             if (response.error) {
                 console.error('Error getting cookies:', response.error);
-                alert('Error: ' + response.error);
+                if (response.error.includes('Not a Wela domain')) {
+                    alert('Please navigate to a Wela domain (staging-33.wela-v15.dev) first, then try again.');
+                } else {
+                    alert('Error: ' + response.error);
+                }
             } else if (response.allCookies) {
                 setCookies(response.allCookies);
                 if (response.authState) {
@@ -271,10 +275,21 @@ function App() {
                             Get Started
                         </button>
                         <button
-                            onClick={loadPersistentAuth}
-                            className="px-6 py-3 bg-white/80 hover:bg-white text-orange-600 font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 border border-orange-200"
+                            onClick={() => {
+                                loadPersistentAuth();
+                                getCookies();
+                            }}
+                            disabled={isLoading}
+                            className="px-6 py-3 bg-white/80 hover:bg-white disabled:bg-white/60 text-orange-600 font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 border border-orange-200 flex items-center justify-center gap-2"
                         >
-                            Check Authentication
+                            {isLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Checking...</span>
+                                </>
+                            ) : (
+                                <span>Check Authentication</span>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -334,55 +349,55 @@ function App() {
             {/* Content */}
             <div className="flex-1 p-4 overflow-y-auto">
                 {currentView === 'auth' ? (
-                    <div className="bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-xl p-6 text-white">
+                    <div className="bg-gradient-to-br from-orange-50 via-white to-orange-100 rounded-xl p-6 text-gray-900">
                         {/* Authentication Header */}
                         <div className="mb-6 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-b from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/25 transform rotate-12 mx-auto mb-4">
+                            <div className="w-16 h-16 bg-gradient-to-b from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-500/25 transform rotate-12 mx-auto mb-4">
                                 <span className="text-white text-2xl font-bold transform -rotate-12">⚙️</span>
                             </div>
-                            <h2 className="text-xl font-semibold text-white mb-2">Authentication & Cookies</h2>
-                            <p className="text-sm text-white/70">Manage your login status and cookies</p>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication & Cookies</h2>
+                            <p className="text-sm text-gray-600">Manage your login status and cookies</p>
                         </div>
 
                         {/* Authentication Status */}
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4 mb-4">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 shadow-sm p-4 mb-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-white">Authentication Status</h3>
+                                <h3 className="font-medium text-gray-900">Authentication Status</h3>
                                 <div className={`w-3 h-3 rounded-full ${userInfo?.isValid ? 'bg-green-500' : 'bg-red-500'}`}></div>
                             </div>
                             
                             {userInfo?.isValid ? (
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-white/70">Name:</span>
-                                        <span className="text-sm font-medium text-white">{userInfo.name}</span>
+                                        <span className="text-sm text-gray-600">Name:</span>
+                                        <span className="text-sm font-medium text-gray-900">{userInfo.name}</span>
                                     </div>
                                     {userInfo.role && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-white/70">Role:</span>
-                                            <span className="text-sm font-medium text-white">{userInfo.role}</span>
+                                            <span className="text-sm text-gray-600">Role:</span>
+                                            <span className="text-sm font-medium text-gray-900">{userInfo.role}</span>
                                         </div>
                                     )}
                                     {userInfo.domain && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm text-white/70">Domain:</span>
-                                            <span className="text-sm font-medium text-white">{userInfo.domain}</span>
+                                            <span className="text-sm text-gray-600">Domain:</span>
+                                            <span className="text-sm font-medium text-gray-900">{userInfo.domain}</span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-white/70">Cookies:</span>
-                                        <span className="text-sm font-medium text-white">{cookies.length} stored</span>
+                                        <span className="text-sm text-gray-600">Cookies:</span>
+                                        <span className="text-sm font-medium text-gray-900">{cookies.length} stored</span>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-4">
-                                    <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                        <span className="text-white/60 text-xl">🔒</span>
+                                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                        <span className="text-orange-600 text-xl">🔒</span>
                                     </div>
-                                    <p className="text-sm text-white/70 mb-3">Not authenticated</p>
+                                    <p className="text-sm text-gray-600 mb-3">Not authenticated</p>
                                     <button
                                         onClick={goToLoginPage}
-                                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors"
+                                        className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
                                     >
                                         Go to Login Page
                                     </button>
@@ -391,17 +406,17 @@ function App() {
                         </div>
 
                         {/* Cookie Management */}
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4 mb-4">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 shadow-sm p-4 mb-4">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-medium text-white">Cookie Management</h3>
-                                <span className="text-xs text-white/60">{cookies.length} cookies</span>
+                                <h3 className="font-medium text-gray-900">Cookie Management</h3>
+                                <span className="text-xs text-gray-500">{cookies.length} cookies</span>
                             </div>
                             
                             <div className="space-y-2">
                                 <button
                                     onClick={getCookies}
                                     disabled={isLoading}
-                                    className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
                                 >
                                     {isLoading ? (
                                         <>
@@ -430,22 +445,22 @@ function App() {
 
                         {/* Cookie List */}
                         {cookies.length > 0 && (
-                            <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-sm p-4">
-                                <h3 className="font-medium text-white mb-3">Stored Cookies</h3>
+                            <div className="bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 shadow-sm p-4">
+                                <h3 className="font-medium text-gray-900 mb-3">Stored Cookies</h3>
                                 <div className="space-y-2 max-h-40 overflow-y-auto">
                                     {cookies.slice(0, 10).map((cookie, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                                        <div key={index} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-white truncate">{cookie.name}</p>
-                                                <p className="text-xs text-white/60 truncate">{cookie.domain}</p>
+                                                <p className="text-sm font-medium text-gray-900 truncate">{cookie.name}</p>
+                                                <p className="text-xs text-gray-600 truncate">{cookie.domain}</p>
                                             </div>
-                                            <div className="text-xs text-white/50">
+                                            <div className="text-xs text-gray-500">
                                                 {cookie.secure ? '🔒' : '🔓'}
                                             </div>
                                         </div>
                                     ))}
                                     {cookies.length > 10 && (
-                                        <p className="text-xs text-white/60 text-center">... and {cookies.length - 10} more</p>
+                                        <p className="text-xs text-gray-500 text-center">... and {cookies.length - 10} more</p>
                                     )}
                                 </div>
                             </div>
