@@ -1,4 +1,4 @@
-# Silid Qwicha - Student Portal Chrome Extension
+# Silid Quickies - Student Portal Chrome Extension
 
 A minimal, beautiful Chrome extension that serves as a student portal for quick access to classes and activities, with seamless redirection to the full LMS. 🎓
 
@@ -46,12 +46,12 @@ This is a **student portal extension** that provides:
 2. Enable **Developer mode** (toggle switch in the top right)
 3. Click **"Load unpacked"**
 4. Select the `dist` folder from your project directory
-5. The "Silid Qwicha" extension should now appear in your extensions list
+5. The "Silid Quickies" extension should now appear in your extensions list
 6. **Pin the extension** to your toolbar for easy access
 
 ## Usage
 
-1. **Open the Portal**: Click the "Silid Qwicha" extension icon in your Chrome toolbar
+1. **Open the Portal**: Click the "Silid Quickies" extension icon in your Chrome toolbar
 2. **Authentication**: Click the ⚙️ settings button to access cookie management
 3. **Get Cookies**: Use "Get Cookies" button to retrieve authentication from Wela domains
 4. **View Classes**: See all your classes in a clean, minimal list format

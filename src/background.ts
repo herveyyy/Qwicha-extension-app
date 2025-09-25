@@ -1,5 +1,5 @@
-// Silid Qwicha Extension Background Script
-console.log('Silid Qwicha Extension background script loaded!');
+// Silid Quickies Extension Background Script
+console.log('Silid Quickies Extension background script loaded!');
 
 // Persistent storage for authentication state
 interface AuthState {
@@ -10,6 +10,7 @@ interface AuthState {
     domain?: string;
     lastChecked: number;
     cookies?: any[];
+    accessToken?: string;
 }
 
 let persistentAuthState: AuthState = {
@@ -357,6 +358,7 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
                     // User is authenticated
                     let userName = 'User';
                     let userRole = 'User';
+                    let accessToken = '';
                     
                     if (fullNameCookie) {
                         userName = decodeURIComponent(fullNameCookie.value);
@@ -371,13 +373,29 @@ chrome.runtime.onMessage.addListener((message: any, sender: chrome.runtime.Messa
                         }
                     }
 
+                    // Extract access token from authData cookie
+                    if (authDataCookie.value) {
+                        try {
+                            // Decode URL-encoded JSON
+                            const decodedValue = decodeURIComponent(authDataCookie.value);
+                            const authData = JSON.parse(decodedValue);
+                            accessToken = authData.accessToken || authData.access_token || authData.token || '';
+                            console.log('Extracted access token:', accessToken ? 'Found' : 'Not found');
+                        } catch (e) {
+                            console.error('Error parsing authData cookie:', e);
+                            // If authData is not JSON, try to use it directly as token
+                            accessToken = decodeURIComponent(authDataCookie.value);
+                        }
+                    }
+
                     newAuthState = {
                         isValid: true,
                         name: userName,
                         role: userRole,
                         domain: domain,
                         lastChecked: Date.now(),
-                        cookies: uniqueCookies
+                        cookies: uniqueCookies,
+                        accessToken: accessToken
                     };
                 }
 
@@ -530,4 +548,4 @@ chrome.cookies.onChanged.addListener((changeInfo: chrome.cookies.CookieChangeInf
     }
 });
 
-console.log('Silid Qwicha Extension background script loaded with cookie monitoring!');
+console.log('Silid Quickies Extension background script loaded with cookie monitoring!');

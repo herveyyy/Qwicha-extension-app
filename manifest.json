@@ -1,10 +1,10 @@
 {
-    "name": "Silid Qwicha",
+    "name": "Silid Quickies",
     "description": "Chrome extension prototype for testing capabilities with Silid LMS integration.",
     "version": "1.0",
     "manifest_version": 3,
     "action": {
-        "default_title": "Open Silid Qwicha"
+        "default_title": "Open Silid Quickies"
     },
     "side_panel": {
         "default_path": "dist/index.html"
